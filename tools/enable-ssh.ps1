@@ -41,9 +41,10 @@ icacls $AK /inheritance:r /grant 'Administrators:F' /grant 'SYSTEM:F' | Out-Null
 & netsh advfirewall firewall add rule name='OpenSSH-Server-In-TCP' dir=in action=allow protocol=TCP localport=22 profile=any | Out-Null
 New-NetFirewallRule -DisplayName 'OpenSSH-Server-In-TCP' -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow -Profile Any -ErrorAction SilentlyContinue | Out-Null
 
-# 7) Tao SERVICE sshd THU CONG bang sc.exe (install-sshd.ps1 hay loi im lang) — chay duoi LocalSystem
+# 7) Tao SERVICE sshd — dung New-Service voi duong dan CO NGOAC KEP (path co dau cach "Program Files")
+Get-Process sshd -ErrorAction SilentlyContinue | Stop-Process -Force
 if (Get-Service sshd -ErrorAction SilentlyContinue) { Stop-Service sshd -Force; & sc.exe delete sshd | Out-Null; Start-Sleep 1 }
-& sc.exe create sshd binPath= "$OSSH\sshd.exe" start= auto obj= LocalSystem DisplayName= "OpenSSH SSH Server" | Out-Null
+New-Service -Name sshd -BinaryPathName "`"$OSSH\sshd.exe`"" -StartupType Automatic -DisplayName 'OpenSSH SSH Server' -ErrorAction SilentlyContinue | Out-Null
 & sc.exe failure sshd reset= 86400 actions= restart/5000/restart/5000/restart/5000 | Out-Null
 Start-Service sshd
 Start-Sleep 3
