@@ -9,7 +9,8 @@ $env:PGPASSWORD = (Get-Content "$env:LOCALAPPDATA\Shopee369\db-superuser.pw" -Ra
 $env:PGCLIENTENCODING = 'UTF8'
 $sqlFile = "$env:TEMP\009_aff.sql"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-(New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/glvgaming369/shopee369-releases/main/tools/009_affiliate_link_analysis.sql', $sqlFile)
+$bust = [Guid]::NewGuid().ToString('N')  # cache-bust tránh CDN raw serve ban cu
+(New-Object Net.WebClient).DownloadFile("https://raw.githubusercontent.com/glvgaming369/shopee369-releases/main/tools/009_affiliate_link_analysis.sql?nocache=$bust", $sqlFile)
 
 Write-Host '[*] Ap migration 009...' -ForegroundColor Cyan
 & $psql -h 127.0.0.1 -p 54329 -U postgres -d appdb -v ON_ERROR_STOP=1 -f $sqlFile
