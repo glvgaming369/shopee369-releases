@@ -41,7 +41,7 @@ with base as (
     max(o.item_seller_comm_rate)                              as report_rate
   from public.affiliate_orders o
   group by o.item_id
-)
+),
 enr as (
   select
     b.*,
