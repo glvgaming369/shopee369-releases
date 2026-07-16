@@ -9,6 +9,8 @@ Write-Host '[*] Bat Funnel moi -> http://127.0.0.1:54331 ...'
 & $t funnel --bg 54331 2>&1
 Start-Sleep 2
 Write-Host '--- funnel status ---' -ForegroundColor Green
-& $t funnel status 2>&1
-Write-Host ''
-Write-Host '>>> URL public cho userscript: https://desktop-ted22dj.tail83a491.ts.net' -ForegroundColor Yellow
+$stat = & $t funnel status 2>&1 | Out-String
+Write-Host $stat
+$m = [regex]::Match($stat, 'https://[\w.-]+\.ts\.net')
+$publicUrl = if ($m.Success) { $m.Value } else { '(xem dong funnel status o tren)' }
+Write-Host ('>>> URL public cho userscript (may nay): ' + $publicUrl) -ForegroundColor Yellow
