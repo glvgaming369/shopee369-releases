@@ -18,7 +18,9 @@ create or replace function public.aff_is_active(p_status text) returns boolean
   $$;
 
 -- View gốc: 1 dòng / LINK (item_id), đã enrich metadata crawler.
-create or replace view public.aff_link_stats as
+-- DROP CASCADE vì create-or-replace-view KHÔNG đổi được cột; cascade gỡ luôn 2 hàm phụ thuộc (tạo lại bên dưới).
+drop view if exists public.aff_link_stats cascade;
+create view public.aff_link_stats as
 with base as (
   select
     o.item_id,
