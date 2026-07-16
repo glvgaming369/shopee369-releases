@@ -40,21 +40,28 @@ with base as (
   from public.affiliate_orders o
   group by o.item_id
 )
+enr as (
+  select
+    b.*,
+    (p.itemid is not null)     as in_crawler,
+    p.seller_commission        as crawler_seller_comm,   -- LƯU Ý: crawler lưu SỐ TIỀN hoa hồng (₫), KHÔNG phải %
+    -- rate % THẬT từ crawler = tiền hoa hồng người bán / giá × 100
+    case when coalesce(p.price,0) > 0 then round(p.seller_commission / p.price * 100, 2) else null end as crawler_rate
+  from base b
+  left join public.products p on p.itemid = b.item_id
+)
 select
-  b.*,
-  p.itemid is not null                                       as in_crawler,
-  p.seller_commission                                        as crawler_seller_comm,
+  e.*,
   -- rate THẬT: ưu tiên crawler (>0), fallback report, mặc định 0
-  coalesce(nullif(p.seller_commission, 0), b.report_rate, 0) as rate_true,
-  round(100.0 * b.orders_cancelled / nullif(b.orders_all, 0), 1) as cancel_pct,
+  coalesce(nullif(e.crawler_rate, 0), e.report_rate, 0)        as rate_true,
+  round(100.0 * e.orders_cancelled / nullif(e.orders_all, 0), 1) as cancel_pct,
   case
-    when b.money > 0                                              then 'PHU'
-    when coalesce(nullif(p.seller_commission,0), b.report_rate,0) > 0 then 'HUNT'
-    when p.itemid is not null                                     then 'SKIP'        -- crawler có SP, seller_comm=0
-    else 'NEED_CRAWL'                                                                -- chưa đủ dữ liệu -> cần crawl xác nhận
-  end                                                          as link_class
-from base b
-left join public.products p on p.itemid = b.item_id;
+    when e.money > 0                                              then 'PHU'
+    when coalesce(nullif(e.crawler_rate,0), e.report_rate,0) > 0  then 'HUNT'
+    when e.in_crawler                                            then 'SKIP'   -- crawler có SP, seller_comm=0
+    else 'NEED_CRAWL'                                                          -- chưa đủ dữ liệu -> cần crawl xác nhận
+  end                                                           as link_class
+from enr e;
 
 -- ── DANH SÁCH PHỦ: link có tiền + gap độ phủ, xếp theo tiềm năng nhân rộng ──
 -- projected_upside = (tiền TB/account đang ăn) × (số account còn thiếu), có trọng số chất lượng.
